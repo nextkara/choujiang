@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/element-ui/lib/theme-chalk/index.css"
+    />
+  </head>
+  <body>
+    <div id="app">
+      <el-card class="card-submit">
+        <div slot="header">
+          <b>抽奖-中奖喷雾加强版</b>
+        </div>
+        <el-form label-width="280px">
+          <el-form-item label="输入抽奖列表: ">
+            <el-input
+              type="textarea"
+              autosize
+              style="margin-top: 5px; width: 40%"
+              v-model="users_string"
+              placeholder="输入用户列表"
+            />
+          </el-form-item>
+          <el-form-item label="输入中奖人数">
+            <el-input-number
+              style="margin-top: 5px"
+              v-model="num"
+              :min="1"
+              :max="user_array.length"
+            ></el-input-number>
+          </el-form-item>
+          <el-form-item label="名单列表">
+            <div v-if="user_array_old.length > 0">
+              <el-tag
+                style="margin-left: 10px; margin-top: 5px"
+                v-for="(value, index) in user_array_old"
+                :key="index"
+                >{{ value }}</el-tag
+              >
+            </div>
+            <div v-if="user_array_old.length === 0">
+              <el-tag type="danger"> 请填充抽奖列表 </el-tag>
+            </div>
+          </el-form-item>
+          <el-form-item label="人数">
+            <b style="color: red; font-size: 30px"
+              >{{ user_array_old.length }}</b
+            >
+          </el-form-item>
+          <el-form-item label="操作: ">
+            <el-button
+              v-if="!buttonStatus"
+              type="success"
+              @click="handleClick()"
+              >开始抽奖
+            </el-button>
+            <el-button v-if="buttonStatus" type="success" @click="handleCopy()"
+              >抽奖完成, 点击复制结果</el-button
+            >
+          </el-form-item>
+        </el-form>
+      </el-card>
+      <el-card class="card-result">
+        <div slot="header">抽奖结果</div>
+        <el-table :data="tableData">
+          <el-table-column prop="name" label="姓名"> </el-table-column>
+        </el-table>
+      </el-card>
+    </div>
+  </body>
+  <script src="https://cdn.jsdelivr.net/npm/vue@2"></script>
+  <script src="https://unpkg.com/element-ui/lib/index.js"></script>
+  <script src="https://unpkg.com/clipboard@2/dist/clipboard.min.js"></script>
+  <script>
+    new Vue({
+      el: "#app",
+      data: function () {
+        return {
+          users_string: "",
+          user_array: [],
+          user_array_old: [],
+          lucky_guys: [],
+          tableData: [],
+          buttonStatus: false,
+          num: 1,
+        };
+      },
+      watch: {
+        users_string(newValue, oldValue) {
+          //去重处理
+          this.$data.user_array_old = Array.from(
+            new Set(newValue.split(";").filter((e) => e !== ""))
+          );
+          //去重处理
+          this.$data.user_array = Array.from(
+            new Set(newValue.split(";").filter((e) => e !== ""))
+          );
+        },
+        lucky_guys(newValue, oldValue) {
+          this.tableData = [];
+          // 将名单推入表格里
+          newValue.forEach((element) => {
+            this.tableData.push({
+              name: element,
+            });
+          });
+        },
+      },
+      methods: {
+        getRandomIntInclusive(min, max) {
+          min = Math.ceil(min);
+          max = Math.floor(max);
+          return Math.floor(Math.random() * (max - min)) + min; //不含最大值，含最小值
+        },
+        handleClick: function () {
+          for (let index = 0; index < this.num; index++) {
+            // 拿到随机数
+            let randomNum = this.getRandomIntInclusive(
+              0,
+              this.user_array.length
+            );
+            // 从数组里取出随机索引的元素
+            let lucky_one = this.user_array[randomNum];
+            // 筛选元素重新生成列表
+            this.user_array = this.user_array.filter((e, i) => i !== randomNum);
+            // 判断元素是否重复出现..
+            if (lucky_one && !this.lucky_guys.includes(lucky_one)) {
+              this.lucky_guys.push(lucky_one);
+            }
+          }
+          this.buttonStatus = true;
+        },
+        handleCopy() {
+          let t = navigator.clipboard
+            .writeText(this.lucky_guys.join(";"))
+            .then((e) => {
+              this.$message({
+                message: "名单复制成功",
+                type: "success",
+              });
+              console.log("copy ok");
+            })
+            .catch((e) => {
+              console.log(e);
+            });
+        },
+      },
+    });
+  </script>
+  <style>
+    .card-submit {
+      margin-top: 80px;
+      margin-left: 100px;
+      margin-right: 100px;
+    }
+    .card-result {
+      margin-top: 20px;
+      margin-left: 100px;
+      margin-right: 100px;
+    }
+  </style>
+</html>
